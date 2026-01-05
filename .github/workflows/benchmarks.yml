@@ -1,0 +1,183 @@
+name: benchmarks
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  posix:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: gcc-x64
+            compiler: g++-14
+            architecture: -m64 -mavx2
+            sourcefile: benchmark.cpp
+            compileroptions: -std=c++2b -O3 -DNDEBUG
+            outputfile: benchmark
+            os: ubuntu-24.04
+            install: g++-14-multilib
+            command: ./benchmark
+
+          - name: clang-x64
+            compiler: clang++-18
+            architecture: -m64 -mavx2
+            sourcefile: benchmark.cpp
+            compileroptions: -std=c++2b -O3 -DNDEBUG
+            outputfile: benchmark
+            os: ubuntu-24.04
+            command: ./benchmark
+
+          - name: clang-arm64
+            compiler: clang++
+            architecture: -m64
+            sourcefile: benchmark.cpp
+            compileroptions: -std=c++2b -O3 -DNDEBUG
+            outputfile: benchmark
+            os: macos-14
+            command: ./benchmark
+
+          - name: gcc-x86
+            compiler: g++-14
+            architecture: -m32
+            sourcefile: benchmark.cpp
+            compileroptions: -std=c++2b -O3 -DNDEBUG
+            outputfile: benchmark
+            os: ubuntu-24.04
+            install: g++-14-multilib
+            command: ./benchmark
+
+          - name: clang-x86
+            compiler: clang++-18
+            architecture: -m32
+            sourcefile: benchmark.cpp
+            compileroptions: -std=c++2b -O3 -DNDEBUG
+            outputfile: benchmark
+            os: ubuntu-24.04
+            install: libstdc++-12-dev:i386
+            command: ./benchmark
+                        
+    runs-on: ${{matrix.os}}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install packages
+        if: matrix.install
+        run: |
+          # sudo -E apt-add-repository -y ppa:ubuntu-toolchain-r/test
+          if uname -p | grep -q 'x86_64'; then sudo dpkg --add-architecture i386 ; fi
+          sudo apt-get update
+          sudo apt-get install -y ${{matrix.install}}
+      - name: Install Boost
+        run: |
+          cd $GITHUB_WORKSPACE
+          git clone https://github.com/boostorg/boost.git boost-root
+          cd boost-root
+          git checkout develop
+          git submodule update --init
+          ./bootstrap.sh
+          ./b2 -d0 headers
+      - name: Install Candidate Boost.Hub
+        run: |
+          cd $GITHUB_WORKSPACE
+          git clone https://github.com/joaquintides/hub.git hub-root
+      - name: Install plf_hive
+        run: |
+          cd $GITHUB_WORKSPACE
+          git clone https://github.com/mattreecebentley/plf_hive.git hive-root
+      - name: Compile and run benchmarks
+        run: |
+          set -euo pipefail
+          cd $GITHUB_WORKSPACE
+          ${{matrix.compiler}} --version
+          if [ -n "${{matrix.xcode_version}}" ]; then
+              DEVELOPER_DIR=/Applications/Xcode-${{matrix.xcode_version}}.app/Contents/Developer
+          fi        
+          for ELEMENT_SIZE in 16 32 64 80; do
+            for NONTRIVIAL in 0 1; do
+              if [ "$NONTRIVIAL" -eq 1 ]; then
+                NONTRIVIAL_FLAG="-DNONTRIVIAL_ELEMENT"
+              else
+                NONTRIVIAL_FLAG=""
+              fi
+
+              ${{matrix.compiler}} $GITHUB_WORKSPACE/${{matrix.sourcefile}} ${{matrix.architecture}} ${{matrix.compileroptions}} -o ${{matrix.outputfile}} \
+                -I$GITHUB_WORKSPACE/hub-root/include -I$GITHUB_WORKSPACE/hive-root -I$GITHUB_WORKSPACE/boost-root \
+                -DELEMENT_SIZE=${ELEMENT_SIZE} ${NONTRIVIAL_FLAG} 
+              ${{matrix.command}}
+            done
+          done
+
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: vs-x64
+            compiler: cl
+            architecture: x64
+            sourcefile: benchmark.cpp
+            compileroptions: /std:c++20 /O2 /GL /D "NDEBUG" /EHsc /MD /Fe:benchmark.exe /arch:AVX2
+            outputfile: benchmark.exe            
+            reportdir: vs-x64
+            os: windows-2022
+            command: benchmark
+
+          - name: vs-x86
+            compiler: cl
+            architecture: x86
+            sourcefile: benchmark.cpp
+            compileroptions: /std:c++20 /O2 /GL /D "NDEBUG" /EHsc /MD /Fe:benchmark.exe /arch:AVX2
+            outputfile: benchmark.exe            
+            reportdir: vs-x86
+            os: windows-2022
+            command: benchmark
+
+    runs-on: ${{matrix.os}}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Boost
+        shell: cmd
+        run: |
+          cd %GITHUB_WORKSPACE%
+          git clone https://github.com/boostorg/boost.git boost-root
+          cd boost-root
+          git checkout develop
+          git submodule update --init
+          cmd /c bootstrap.bat
+          .\b2.exe -d0 headers
+      - name: Install Candidate Boost.Hub
+        shell: cmd
+        run: |
+          cd %GITHUB_WORKSPACE%
+          git clone https://github.com/joaquintides/hub.git hub-root
+      - name: Install plf_hive
+        shell: cmd
+        run: |
+          cd %GITHUB_WORKSPACE%
+          git clone https://github.com/mattreecebentley/plf_hive.git hive-root
+      - name: Compile and run benchmarks
+        shell: cmd
+        run: |
+          setlocal EnableExtensions EnableDelayedExpansion
+          cd %GITHUB_WORKSPACE%
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.architecture}}
+          set INCLUDE=%INCLUDE%;%GITHUB_WORKSPACE%\hub-root\include;%GITHUB_WORKSPACE%\hive-root;%GITHUB_WORKSPACE%\boost-root
+          echo %INCLUDE%
+          for %%S in (16 32 64 80) do (
+            for %%N in (0 1) do (
+              if "%%N"=="1" (
+                set "DEFINES=/DELEMENT_SIZE=%%S /DNONTRIVIAL_ELEMENT"
+              ) else (
+                set "DEFINES=/DELEMENT_SIZE=%%S"
+              )
+              ${{matrix.compiler}} %GITHUB_WORKSPACE%\${{matrix.sourcefile}} ${{matrix.compileroptions}} !DEFINES!
+              if errorlevel 1 exit /b 1
+              ${{matrix.command}}
+            )
+          )
