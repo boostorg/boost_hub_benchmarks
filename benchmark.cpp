@@ -92,8 +92,8 @@ struct urbg
 {
   using result_type = boost::uint64_t;
 
-  static result_type min() { return 0; }
-  static result_type max() { return (result_type)(-1); }
+  static constexpr result_type min() { return 0; }
+  static constexpr result_type max() { return (result_type)(-1); }
 
   urbg() = default;
   explicit urbg(result_type seed): rng{seed} {}
