@@ -14,50 +14,50 @@ jobs:
       matrix:
         include:
           - name: gcc-x64
-            compiler: g++-14
-            architecture: -m64 -mavx2
+            compiler: g++-15
+            architecture: -m64
             sourcefile: benchmark.cpp
-            compileroptions: -std=c++2b -O3 -DNDEBUG
+            compileroptions: -std=c++23 -O3 -DNDEBUG
             outputfile: benchmark
-            os: ubuntu-24.04
-            install: g++-14-multilib
+            os: ubuntu-latest
+            install: g++-15-multilib
             command: ./benchmark
 
           - name: clang-x64
-            compiler: clang++-18
-            architecture: -m64 -mavx2
+            compiler: clang++-20
+            architecture: -m64
             sourcefile: benchmark.cpp
-            compileroptions: -std=c++2b -O3 -DNDEBUG
+            compileroptions: -std=c++23 -O3 -DNDEBUG
             outputfile: benchmark
-            os: ubuntu-24.04
+            os: ubuntu-25.04
             command: ./benchmark
 
           - name: clang-arm64
             compiler: clang++
             architecture: -m64
             sourcefile: benchmark.cpp
-            compileroptions: -std=c++2b -O3 -DNDEBUG
+            compileroptions: -std=c++20 -O3 -DNDEBUG
             outputfile: benchmark
-            os: macos-14
+            os: macos-15
             command: ./benchmark
 
           - name: gcc-x86
-            compiler: g++-14
+            compiler: g++-15
             architecture: -m32
             sourcefile: benchmark.cpp
-            compileroptions: -std=c++2b -O3 -DNDEBUG
+            compileroptions: -std=c++23 -O3 -DNDEBUG
             outputfile: benchmark
-            os: ubuntu-24.04
-            install: g++-14-multilib
+            os: ubuntu-latest
+            install: g++-15-multilib
             command: ./benchmark
 
           - name: clang-x86
-            compiler: clang++-18
+            compiler: clang++-20
             architecture: -m32
             sourcefile: benchmark.cpp
-            compileroptions: -std=c++2b -O3 -DNDEBUG
+            compileroptions: -std=c++23 -O3 -DNDEBUG
             outputfile: benchmark
-            os: ubuntu-24.04
+            os: ubuntu-25.04
             install: libstdc++-12-dev:i386
             command: ./benchmark
                         
