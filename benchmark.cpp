@@ -135,12 +135,7 @@ void benchmark(const char* title, FHive fhive, FHub fhub)
 
   std::cout << std::string(41, '-') << "\n"
             << title << "\n"
-            << "sizeof(element): " << sizeof(element) << ", ";
-#if defined(NONTRIVIAL_ELEMENT)
-  std::cout  << "non-trivial movement\n";
-#else
-  std::cout << "trivial movement\n";
-#endif
+            << "sizeof(element): " << sizeof(element) << "\n";
   std::cout << std::left << std::setw(11) << "" << "container size\n" << std::right
             << std::left << std::setw(11) << "erase rate" << std::right;
   for(std::size_t i = 3; i <= 7; ++i)
@@ -153,7 +148,7 @@ void benchmark(const char* title, FHive fhive, FHub fhub)
     for(std::size_t i = 3; i <= 7; ++i) {
       std::size_t n = (std::size_t)std::pow(10.0, (double)i);
       if((double)n * (double)sizeof(element) / (1.0 - erasure_rate) > (double)size_limit) {
-        std::cout << "too large         " << std::flush;
+        std::cout << "---- " << std::flush;
         continue;
       }
 
@@ -193,13 +188,65 @@ struct create_and_destroy
   }
 };
 
+template<typename Container>
+struct prepare
+{
+  const Container& get_container(std::size_t n_, double erasure_rate_)
+  {
+    if(n_ != n || erasure_rate_ != erasure_rate) {
+      pause_timing();
+      n = n_;
+      erasure_rate = erasure_rate_;
+      c = make<Container>(n, erasure_rate);
+      resume_timing();
+    }
+    return c;
+  }
+
+  std::size_t n = 0;
+  double      erasure_rate = 0.0;
+  Container   c;
+};
+
+template<typename Container>
+struct for_each: prepare<Container>
+{
+  unsigned int operator()(std::size_t n, double erasure_rate)
+  {
+    unsigned int res = 0;
+    auto& c = this->get_container(n, erasure_rate);
+    for(const auto& x: c) res += (unsigned int)x; 
+    return res;
+  }
+};
+
+template<typename Container>
+struct visit_all: prepare<Container>
+{
+  unsigned int operator()(std::size_t n, double erasure_rate)
+  {
+    unsigned int res = 0;
+    auto& c = this->get_container(n, erasure_rate);
+    c.visit_all([&] (const auto& x) { res += (unsigned int)x; });
+    return res;
+  }
+};
+
 int main()
 {
   using hive = plf::hive<element>;
   using hub = boost::hub<element>;
 
-  benchmark("insert, erase, insert", 
+  benchmark(
+    "insert, erase, insert", 
     create<hive>{}, create<hub>{});
-  benchmark("insert, erase, insert, destoy", 
+  benchmark(
+    "insert, erase, insert, destoy", 
     create_and_destroy<hive>{}, create_and_destroy<hub>{});
+  benchmark(
+    "for_each", 
+    for_each<hive>{}, for_each<hub>{});
+  benchmark(
+    "visit_all", 
+    for_each<hive>{}, visit_all<hub>{});
 }

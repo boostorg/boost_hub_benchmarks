@@ -98,18 +98,10 @@ jobs:
               DEVELOPER_DIR=/Applications/Xcode-${{matrix.xcode_version}}.app/Contents/Developer
           fi        
           for ELEMENT_SIZE in 16 32 64 80; do
-            for NONTRIVIAL in 0 1; do
-              if [ "$NONTRIVIAL" -eq 1 ]; then
-                NONTRIVIAL_FLAG="-DNONTRIVIAL_ELEMENT"
-              else
-                NONTRIVIAL_FLAG=""
-              fi
-
-              ${{matrix.compiler}} $GITHUB_WORKSPACE/${{matrix.sourcefile}} ${{matrix.architecture}} ${{matrix.compileroptions}} -o ${{matrix.outputfile}} \
-                -I$GITHUB_WORKSPACE/hub-root/include -I$GITHUB_WORKSPACE/hive-root -I$GITHUB_WORKSPACE/boost-root \
-                -DELEMENT_SIZE=${ELEMENT_SIZE} ${NONTRIVIAL_FLAG} 
-              ${{matrix.command}}
-            done
+            ${{matrix.compiler}} $GITHUB_WORKSPACE/${{matrix.sourcefile}} ${{matrix.architecture}} ${{matrix.compileroptions}} -o ${{matrix.outputfile}} \
+              -I$GITHUB_WORKSPACE/hub-root/include -I$GITHUB_WORKSPACE/hive-root -I$GITHUB_WORKSPACE/boost-root \
+              -DELEMENT_SIZE=${ELEMENT_SIZE} -DNONTRIVIAL_ELEMENT 
+            ${{matrix.command}}
           done
 
   windows:
@@ -170,14 +162,8 @@ jobs:
           set INCLUDE=%INCLUDE%;%GITHUB_WORKSPACE%\hub-root\include;%GITHUB_WORKSPACE%\hive-root;%GITHUB_WORKSPACE%\boost-root
           echo %INCLUDE%
           for %%S in (16 32 64 80) do (
-            for %%N in (0 1) do (
-              if "%%N"=="1" (
-                set "DEFINES=/DELEMENT_SIZE=%%S /DNONTRIVIAL_ELEMENT"
-              ) else (
-                set "DEFINES=/DELEMENT_SIZE=%%S"
-              )
-              ${{matrix.compiler}} %GITHUB_WORKSPACE%\${{matrix.sourcefile}} ${{matrix.compileroptions}} !DEFINES!
-              if errorlevel 1 exit /b 1
-              ${{matrix.command}}
-            )
+            set "DEFINES=/DELEMENT_SIZE=%%S /DNONTRIVIAL_ELEMENT"
+            ${{matrix.compiler}} %GITHUB_WORKSPACE%\${{matrix.sourcefile}} ${{matrix.compileroptions}} !DEFINES!
+            if errorlevel 1 exit /b 1
+            ${{matrix.command}}
           )
