@@ -66,6 +66,12 @@ jobs:
                         
     runs-on: ${{matrix.os}}
 
+    container:
+      image: ${{matrix.container}}
+      volumes:
+        - /node20217:/node20217:rw,rshared
+        - ${{ startsWith(matrix.container, 'ubuntu:1') && '/node20217:/__e/node20:ro,rshared' || ' ' }}
+
     steps:
       - name: Setup container environment
         if: matrix.container
