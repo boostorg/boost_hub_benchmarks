@@ -63,7 +63,7 @@ jobs:
             outputfile: benchmark
             container: ubuntu:25.04
             os: ubuntu-latest
-            install: clang-20
+            install: clang-20 g++-multilib libc6-dev-i386 libstdc++-13-dev:i386
             command: ./benchmark
                         
     runs-on: ${{matrix.os}}
