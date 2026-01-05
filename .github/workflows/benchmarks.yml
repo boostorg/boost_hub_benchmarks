@@ -32,6 +32,7 @@ jobs:
             outputfile: benchmark
             container: ubuntu:25.04
             os: ubuntu-latest
+            install: clang-20
             command: ./benchmark
 
           - name: clang-arm64
@@ -62,6 +63,7 @@ jobs:
             outputfile: benchmark
             container: ubuntu:25.04
             os: ubuntu-latest
+            install: clang-20
             command: ./benchmark
                         
     runs-on: ${{matrix.os}}
