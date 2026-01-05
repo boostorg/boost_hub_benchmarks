@@ -241,7 +241,7 @@ int main()
     "insert, erase, insert", 
     create<hive>{}, create<hub>{});
   benchmark(
-    "insert, erase, insert, destoy", 
+    "insert, erase, insert, destroy", 
     create_and_destroy<hive>{}, create_and_destroy<hub>{});
   benchmark(
     "for_each", 
