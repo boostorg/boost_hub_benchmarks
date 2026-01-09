@@ -210,7 +210,7 @@ struct prepare
       pause_timing();
       n = n_;
       erasure_rate = erasure_rate_;
-      c.clear();
+      //c.clear();
       //c.shrink_to_fit();
       c = make<Container>(n, erasure_rate);
       resume_timing();
@@ -259,14 +259,12 @@ int main()
     benchmark(
       "insert, erase, insert, destroy", 
       create_and_destroy<hive>{}, create_and_destroy<hub>{});
-#if 0
     benchmark(
       "for_each", 
       for_each<hive>{}, for_each<hub>{});
     benchmark(
       "visit_all", 
       for_each<hive>{}, visit_all<hub>{});
-#endif
   }
   catch(const std::exception& e) {
     std::cerr << e.what() << std::endl;
