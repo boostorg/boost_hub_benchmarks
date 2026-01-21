@@ -20,7 +20,7 @@ jobs:
             compileroptions: -std=c++23 -O3 -DNDEBUG
             outputfile: benchmark
             os: [self-hosted, linux, x64]
-            install: g++-15-multilib
+            install: g++-15
             command: ./benchmark
 
           - name: clang-x64
@@ -49,7 +49,7 @@ jobs:
             compileroptions: -std=c++23 -O3 -DNDEBUG
             outputfile: benchmark
             os: [self-hosted, linux, x64]
-            install: g++-15-multilib
+            install: g++-15
             command: ./benchmark
 
           - name: clang-x86
