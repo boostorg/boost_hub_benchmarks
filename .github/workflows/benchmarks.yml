@@ -13,15 +13,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
- #         - name: gcc-x64
- #           compiler: g++-14
- #           architecture: -m64
- #           sourcefile: benchmark.cpp
- #           compileroptions: -std=c++23 -O3 -DNDEBUG
- #           outputfile: benchmark
- #           os: [self-hosted, linux, x64]
- #           install: g++-14
- #           command: sudo cgexec -g memory,cpu:shield sudo -u gha ./benchmark
+          - name: gcc-x64
+            compiler: g++-14
+            architecture: -m64
+            sourcefile: benchmark.cpp
+            compileroptions: -std=c++23 -O3 -DNDEBUG
+            outputfile: benchmark
+            os: [self-hosted, linux, x64]
+            install: g++-14
+            command: sudo cgexec -g memory,cpu:shield sudo -u gha ./benchmark
 
           - name: clang-x64
             compiler: clang++-20
@@ -42,15 +42,15 @@ jobs:
             os: [self-hosted, macOS, ARM64]
             command: ./benchmark
 
-#          - name: gcc-x86
-#            compiler: g++-14
-#            architecture: -m32
-#            sourcefile: benchmark.cpp
-#            compileroptions: -std=c++23 -O3 -DNDEBUG
-#            outputfile: benchmark
-#            os: [self-hosted, linux, x64]
-#            install: g++-14
-#            command: sudo cgexec -g memory,cpu:shield sudo -u gha ./benchmark
+          - name: gcc-x86
+            compiler: g++-14
+            architecture: -m32
+            sourcefile: benchmark.cpp
+            compileroptions: -std=c++23 -O3 -DNDEBUG
+            outputfile: benchmark
+            os: [self-hosted, linux, x64]
+            install: g++-14
+            command: sudo cgexec -g memory,cpu:shield sudo -u gha ./benchmark
 
           - name: clang-x86
             compiler: clang++-20
