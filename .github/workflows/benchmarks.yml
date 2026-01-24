@@ -14,14 +14,15 @@ jobs:
       matrix:
         include:
           - name: gcc-x64
-            compiler: g++-14
+            compiler: g++-15
             architecture: -m64
             sourcefile: benchmark.cpp
             compileroptions: -std=c++23 -O3 -DNDEBUG
             outputfile: benchmark
-            os: [self-hosted, linux, x64]
-            install: g++-14
-            command: sudo systemd-run --scope --uid=gha -p AllowedCPUs=2 ./benchmark
+            os: ubuntu-latest
+            container: ubuntu:25.04
+            install: g++-15-multilib
+            command: ./benchmark
 
           - name: clang-x64
             compiler: clang++-20
@@ -29,9 +30,10 @@ jobs:
             sourcefile: benchmark.cpp
             compileroptions: -std=c++23 -O3 -DNDEBUG
             outputfile: benchmark
-            os: [self-hosted, linux, x64]
+            container: ubuntu:25.04
+            os: ubuntu-latest
             install: clang-20
-            command: sudo systemd-run --scope --uid=gha -p AllowedCPUs=2 ./benchmark
+            command: ./benchmark
 
           - name: clang-arm64
             compiler: clang++
@@ -39,18 +41,19 @@ jobs:
             sourcefile: benchmark.cpp
             compileroptions: -std=c++20 -O3 -DNDEBUG
             outputfile: benchmark
-            os: [self-hosted, macOS, ARM64]
+            os: macos-15
             command: ./benchmark
 
           - name: gcc-x86
-            compiler: g++-14
+            compiler: g++-15
             architecture: -m32
             sourcefile: benchmark.cpp
             compileroptions: -std=c++23 -O3 -DNDEBUG
             outputfile: benchmark
-            os: [self-hosted, linux, x64]
-            install: g++-14
-            command: sudo systemd-run --scope --uid=gha -p AllowedCPUs=2 ./benchmark
+            os: ubuntu-latest
+            container: ubuntu:25.04
+            install: g++-15-multilib
+            command: ./benchmark
 
           - name: clang-x86
             compiler: clang++-20
@@ -58,9 +61,10 @@ jobs:
             sourcefile: benchmark.cpp
             compileroptions: -std=c++23 -O3 -DNDEBUG
             outputfile: benchmark
-            os: [self-hosted, linux, x64]
+            container: ubuntu:25.04
+            os: ubuntu-latest
             install: clang-20 g++-multilib libc6-dev-i386 libstdc++-13-dev:i386
-            command: sudo systemd-run --scope --uid=gha -p AllowedCPUs=2 ./benchmark
+            command: ./benchmark
                         
     runs-on: ${{matrix.os}}
 
@@ -132,7 +136,7 @@ jobs:
             compileroptions: /std:c++20 /O2 /GL /D "NDEBUG" /EHsc /MD /Fe:benchmark.exe /arch:AVX2
             outputfile: benchmark.exe            
             reportdir: vs-x64
-            os: [self-hosted, Windows, X64]
+            os: windows-2022
             command: benchmark
 
           - name: vs-x86
@@ -142,7 +146,7 @@ jobs:
             compileroptions: /std:c++20 /O2 /GL /D "NDEBUG" /EHsc /MD /Fe:benchmark.exe /arch:AVX2
             outputfile: benchmark.exe            
             reportdir: vs-x86
-            os: [self-hosted, Windows, X64]
+            os: windows-2022
             command: benchmark
 
     runs-on: ${{matrix.os}}
@@ -174,7 +178,7 @@ jobs:
         run: |
           setlocal EnableExtensions EnableDelayedExpansion
           cd %GITHUB_WORKSPACE%
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.architecture}}
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.architecture}}
           set INCLUDE=%INCLUDE%;%GITHUB_WORKSPACE%\hub-root\include;%GITHUB_WORKSPACE%\hive-root;%GITHUB_WORKSPACE%\boost-root
           echo %INCLUDE%
           for %%S in (16 32 64 80) do (
