@@ -105,8 +105,6 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           git clone -b feature/forward-available-list https://github.com/joaquintides/hub.git hub-root
-          cd hub-root
-          git checkout 731fc7b0ff7d4ef2cfd13d47e7940503d22051c3
       - name: Install plf_hive
         run: |
           cd $GITHUB_WORKSPACE
@@ -138,7 +136,7 @@ jobs:
             compileroptions: /std:c++20 /O2 /GL /D "NDEBUG" /EHsc /MD /Fe:benchmark.exe /arch:AVX2
             outputfile: benchmark.exe            
             reportdir: vs-x64
-            os: windows-2022
+            os: windows-2025
             command: benchmark
 
           - name: vs-x86
@@ -148,7 +146,7 @@ jobs:
             compileroptions: /std:c++20 /O2 /GL /D "NDEBUG" /EHsc /MD /Fe:benchmark.exe /arch:AVX2
             outputfile: benchmark.exe            
             reportdir: vs-x86
-            os: windows-2022
+            os: windows-2025
             command: benchmark
 
     runs-on: ${{matrix.os}}
@@ -170,8 +168,6 @@ jobs:
         run: |
           cd %GITHUB_WORKSPACE%
           git clone -b feature/forward-available-list https://github.com/joaquintides/hub.git hub-root
-          cd hub-root
-          git checkout 731fc7b0ff7d4ef2cfd13d47e7940503d22051c3
       - name: Install plf_hive
         shell: cmd
         run: |
