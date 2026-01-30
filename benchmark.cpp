@@ -1,4 +1,4 @@
-/* Benchmark of boost::hub against plf::hive.
+/* Benchmark of boost::container::hub against plf::hive.
  * 
  * Copyright 2026 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
@@ -52,8 +52,8 @@ void resume_timing()
   measure_start += std::chrono::high_resolution_clock::now() - measure_pause;
 }
 
+#include <boost/container/hub.hpp>
 #include <boost/core/detail/splitmix64.hpp>
-#include <boost/hub.hpp>
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -116,7 +116,7 @@ void erase_void(Container& x, Iterator it)
 }
 
 template<typename... Args, typename Iterator>
-void erase_void(boost::hub<Args...>& x, Iterator it)
+void erase_void(boost::container::hub<Args...>& x, Iterator it)
 {
   x.erase_void(it);
 }
@@ -160,9 +160,6 @@ void benchmark(const char* title, FHive fhive, FHub fhub)
   std::cout << std::string(41, '-') << "\n"
             << title << "\n"
             << "sizeof(element): " << sizeof(element) << "\n";
-#if defined(BOOST_HUB_ENABLE_FORWARD_AVAILABLE_LIST)
-  std::cout << "uses forward available list\n";
-#endif
   std::cout << std::left << std::setw(11) << "" << "container size\n" << std::right
             << std::left << std::setw(11) << "erase rate" << std::right;
   for(std::size_t i = 3; i <= 7; ++i)
@@ -280,7 +277,7 @@ int main()
 {
   try{
     using hive = plf::hive<element>;
-    using hub = boost::hub<element>;
+    using hub = boost::container::hub<element>;
 
     benchmark(
       "insert, erase, insert", 
