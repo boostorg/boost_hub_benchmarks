@@ -198,7 +198,7 @@ struct create
     {
       auto c = make<Container>(n, erasure_rate);
       fill(c, n);
-      res = c.size();
+      res = (unsigned int)c.size();
       pause_timing();
     }
     resume_timing();
@@ -213,7 +213,7 @@ struct create_and_destroy
   {
     auto c = make<Container>(n, erasure_rate);
     fill(c, n);
-    return c.size();
+    return (unsigned int)c.size();
   }
 };
 
@@ -263,6 +263,19 @@ struct visit_all: prepare<Container>
   }
 };
 
+template<typename Container>
+struct sort
+{
+  unsigned int operator()(std::size_t n, double erasure_rate) const
+  {
+    pause_timing();
+    auto c = make<Container>(n, erasure_rate);
+    resume_timing();
+    c.sort();
+    return (unsigned int)c.size();
+  }
+};
+
 int main()
 {
   try{
@@ -281,6 +294,9 @@ int main()
     benchmark(
       "visit_all", 
       for_each<hive>{}, visit_all<hub>{});
+    benchmark(
+      "sort", 
+      sort<hive>{}, sort<hub>{});
   }
   catch(const std::exception& e) {
     std::cerr << e.what() << std::endl;
