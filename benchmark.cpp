@@ -195,7 +195,6 @@ benchmark_result benchmark(const char* title, FHive fhive, FHub fhub)
       std::size_t        n = (std::size_t)std::pow(10.0, (double)i);
       if(n * sizeof(element) > size_limit) {
         out << "----";
-        continue;
       }
       else{
         auto thive = measure([&] { return fhive(n, erasure_rate); });
