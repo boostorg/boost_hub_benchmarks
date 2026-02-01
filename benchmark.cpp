@@ -367,7 +367,7 @@ void write_table(const table& t, const char* filename)
     out << "|\n";
   }
 
-  out << table_horizontal_line << "\n";
+  out << table_horizontal_line;
 }
 
 int main(int argc,char* argv[])
