@@ -217,3 +217,26 @@ jobs:
           git add ${{matrix.reportdir}}
           git commit -m "updated benchmark results"
           git push
+
+  final:
+    needs: [posix,windows]
+    
+    runs-on: ubuntu-22.04
+    container:
+      image: python:2.7.18-buster
+    
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fast-forward repo 
+        run: |
+          git pull
+      - name: Run data feeding script
+        run: |
+          ./insert_data.sh
+      - name: Push modified README.md to repo
+        run: |
+          git config --global --add safe.directory "$env:GITHUB_WORKSPACE"
+          git config --global user.name 'joaquintides'
+          git config --global user.email 'joaquintides@users.noreply.github.com'
+          git commit -am "updated README.md"
+          git push
