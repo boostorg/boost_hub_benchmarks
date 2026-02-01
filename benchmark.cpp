@@ -168,7 +168,12 @@ template<typename FHive, typename FHub>
 benchmark_result benchmark(const char* title, FHive fhive, FHub fhub)
 {
   static constexpr std::size_t size_limit =
-    sizeof(std::size_t) == 4?  800ull * 1024ull * 1024ull:
+    sizeof(std::size_t) == 4?
+#if defined(BOOST_MSVC) && defined(_M_IX86)
+                              600ull * 1024ull * 1024ull:
+#else
+                              800ull * 1024ull * 1024ull:
+#endif
                               2048ull * 1024ull * 1024ull;
 
   benchmark_result res = {title};
@@ -300,7 +305,7 @@ using table = std::vector<benchmark_result>;
 
 void write_table(const table& t, const char* filename)
 {
-  static std::size_t first_column_width = 15;
+  static std::size_t first_column_width = 11;
   static std::size_t data_column_width = (max_size_exp + 1 - min_size_exp) * 5;
   std::size_t        num_data_columns = t.size();
   std::size_t        table_width = first_column_width + 2 + num_data_columns * (data_column_width + 2) + 1;
@@ -330,7 +335,7 @@ void write_table(const table& t, const char* filename)
   out << data_horizontal_line << "\n";
 
   out << "  " << std::setw(first_column_width) << " " ;
-  for(int i = 0; i < num_data_columns; ++i) {
+  for(std::size_t i = 0; i < num_data_columns; ++i) {
     out << "| " << std::setw(data_column_width) << "container size";
   }
   out << "|\n";
@@ -338,7 +343,7 @@ void write_table(const table& t, const char* filename)
   out << table_horizontal_line << "\n";
 
   out << "| " << std::setw(first_column_width) << "erase rate";
-  for(int i = 0; i < num_data_columns; ++i) {
+  for(std::size_t i = 0; i < num_data_columns; ++i) {
     out << "| ";
     for(auto j = min_size_exp; j <= max_size_exp; ++j) {
           out << "1.E" << j << " ";
