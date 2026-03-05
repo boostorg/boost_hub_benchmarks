@@ -113,6 +113,8 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           git clone https://github.com/joaquintides/hub.git hub-root
+          cd hub-root
+          git checkout 206ccf4a2047a743a3094642bdc2ed238c2f925a
       - name: Install plf_hive
         run: |
           cd $GITHUB_WORKSPACE
@@ -188,6 +190,8 @@ jobs:
         run: |
           cd %GITHUB_WORKSPACE%
           git clone https://github.com/joaquintides/hub.git hub-root
+          cd hub-root
+          git checkout 206ccf4a2047a743a3094642bdc2ed238c2f925a
       - name: Install plf_hive
         shell: cmd
         run: |
