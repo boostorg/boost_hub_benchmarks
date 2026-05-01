@@ -265,7 +265,7 @@ struct prepare
 };
 
 template<typename Container>
-struct for_each: prepare<Container>
+struct range_for: prepare<Container>
 {
   unsigned int operator()(std::size_t n, double erasure_rate)
   {
@@ -277,13 +277,14 @@ struct for_each: prepare<Container>
 };
 
 template<typename Container>
-struct visit_all: prepare<Container>
+struct for_each: prepare<Container>
 {
   unsigned int operator()(std::size_t n, double erasure_rate)
   {
     unsigned int res = 0;
     auto& c = this->get_container(n, erasure_rate);
-    c.visit_all([&] (const auto& x) { res += (unsigned int)x; });
+    boost::container::for_each(
+      c, [&] (const auto& x) { res += (unsigned int)x; });
     return res;
   }
 };
@@ -392,11 +393,11 @@ int main(int argc,char* argv[])
       "ins, erase, ins, destroy", 
       create_and_destroy<hive>{}, create_and_destroy<hub>{}));
     t.push_back(benchmark(
-      "for_each", 
-      for_each<hive>{}, for_each<hub>{}));
+      "range for", 
+      range_for<hive>{}, range_for<hub>{}));
     t.push_back(benchmark(
-      "visit_all", 
-      for_each<hive>{}, visit_all<hub>{}));
+      "for_each", 
+      range_for<hive>{}, for_each<hub>{}));
     t.push_back(benchmark(
       "sort", 
       sort<hive>{}, sort<hub>{}));
