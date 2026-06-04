@@ -1,4 +1,4 @@
-/* Benchmark of boost::container::hub against plf::hive.
+/* Benchmark of boost::container::nest against plf::hive.
  * 
  * Copyright 2026 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
@@ -52,7 +52,7 @@ void resume_timing()
   measure_start += std::chrono::high_resolution_clock::now() - measure_pause;
 }
 
-#include <boost/container/hub.hpp>
+#include <boost/container/experimental/nest.hpp>
 #include <boost/core/detail/splitmix64.hpp>
 #include <cmath>
 #include <cstring>
@@ -118,7 +118,7 @@ void erase_void(Container& x, Iterator it)
 }
 
 template<typename... Args, typename Iterator>
-void erase_void(boost::container::hub<Args...>& x, Iterator it)
+void erase_void(boost::container::nest<Args...>& x, Iterator it)
 {
   x.erase_void(it);
 }
@@ -164,8 +164,8 @@ struct benchmark_result
   std::vector<std::vector<std::string>> data;
 };
 
-template<typename FHive, typename FHub>
-benchmark_result benchmark(const char* title, FHive fhive, FHub fhub)
+template<typename FHive, typename FNest>
+benchmark_result benchmark(const char* title, FHive fhive, FNest fnest)
 {
   static constexpr std::size_t size_limit =
     sizeof(std::size_t) == 4?
@@ -203,7 +203,7 @@ benchmark_result benchmark(const char* title, FHive fhive, FHub fhub)
       }
       else{
         auto thive = measure([&] { return fhive(n, erasure_rate); });
-        auto thub = measure([&] { return fhub(n, erasure_rate); });
+        auto thub = measure([&] { return fnest(n, erasure_rate); });
         out << std::fixed << std::setprecision(2) << thive / thub;
       }
       std::cout << out.str() << " " << std::flush;
@@ -382,25 +382,25 @@ int main(int argc,char* argv[])
   
   try{
     using hive = plf::hive<element>;
-    using hub = boost::container::hub<element>;
+    using nest = boost::container::nest<element>;
 
     table t;
 
     t.push_back(benchmark(
       "insert, erase, insert", 
-      create<hive>{}, create<hub>{}));
+      create<hive>{}, create<nest>{}));
     t.push_back(benchmark(
       "ins, erase, ins, destroy", 
-      create_and_destroy<hive>{}, create_and_destroy<hub>{}));
+      create_and_destroy<hive>{}, create_and_destroy<nest>{}));
     t.push_back(benchmark(
       "range for", 
-      range_for<hive>{}, range_for<hub>{}));
+      range_for<hive>{}, range_for<nest>{}));
     t.push_back(benchmark(
       "for_each", 
-      range_for<hive>{}, for_each<hub>{}));
+      range_for<hive>{}, for_each<nest>{}));
     t.push_back(benchmark(
       "sort", 
-      sort<hive>{}, sort<hub>{}));
+      sort<hive>{}, sort<nest>{}));
 
     write_table(t, filename);
   }
