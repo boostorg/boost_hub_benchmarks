@@ -1,4 +1,4 @@
-/* Benchmark of boost::container::nest against plf::hive.
+/* Benchmark of boost::container::nest against boost::container::hub.
  * 
  * Copyright 2026 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
@@ -53,13 +53,13 @@ void resume_timing()
 }
 
 #include <boost/container/experimental/nest.hpp>
+#include <boost/container/hub.hpp>
 #include <boost/core/detail/splitmix64.hpp>
 #include <cmath>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
-#include <plf_hive.h>
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -111,18 +111,6 @@ struct urbg
   boost::detail::splitmix64 rng;
 };
 
-template<typename Container, typename Iterator>
-void erase_void(Container& x, Iterator it)
-{
-  x.erase(it);
-}
-
-template<typename... Args, typename Iterator>
-void erase_void(boost::container::nest<Args...>& x, Iterator it)
-{
-  x.erase_void(it);
-}
-
 template<typename Container>
 Container make(std::size_t n, double erasure_rate)
 {
@@ -137,7 +125,7 @@ Container make(std::size_t n, double erasure_rate)
   for(std::size_t i = 0; i < n; ++i) iterators.push_back(c.insert((int)rng()));
   std::shuffle(iterators.begin(), iterators.end(), rng);
   for(auto it: iterators) {
-    if(rng() < erasure_cut) erase_void(c, it);
+    if(rng() < erasure_cut) c.erase_void(it);
   }
   return c;
 }
@@ -164,8 +152,8 @@ struct benchmark_result
   std::vector<std::vector<std::string>> data;
 };
 
-template<typename FHive, typename FNest>
-benchmark_result benchmark(const char* title, FHive fhive, FNest fnest)
+template<typename FHub, typename FNest>
+benchmark_result benchmark(const char* title, FHub fhub, FNest fnest)
 {
   static constexpr std::size_t size_limit =
     sizeof(std::size_t) == 4?
@@ -202,9 +190,9 @@ benchmark_result benchmark(const char* title, FHive fhive, FNest fnest)
         out << "----";
       }
       else{
-        auto thive = measure([&] { return fhive(n, erasure_rate); });
-        auto thub = measure([&] { return fnest(n, erasure_rate); });
-        out << std::fixed << std::setprecision(2) << thive / thub;
+        auto thub = measure([&] { return fhub(n, erasure_rate); });
+        auto tnest = measure([&] { return fnest(n, erasure_rate); });
+        out << std::fixed << std::setprecision(2) << thub / tnest;
       }
       std::cout << out.str() << " " << std::flush;
       res.data.back().push_back(out.str());
@@ -381,26 +369,26 @@ int main(int argc,char* argv[])
   const char* filename = argv[1];
   
   try{
-    using hive = plf::hive<element>;
+    using hub = boost::container::hub<element>;
     using nest = boost::container::nest<element>;
 
     table t;
 
     t.push_back(benchmark(
       "insert, erase, insert", 
-      create<hive>{}, create<nest>{}));
+      create<hub>{}, create<nest>{}));
     t.push_back(benchmark(
       "ins, erase, ins, destroy", 
-      create_and_destroy<hive>{}, create_and_destroy<nest>{}));
+      create_and_destroy<hub>{}, create_and_destroy<nest>{}));
     t.push_back(benchmark(
       "range for", 
-      range_for<hive>{}, range_for<nest>{}));
+      range_for<hub>{}, range_for<nest>{}));
     t.push_back(benchmark(
       "for_each", 
-      range_for<hive>{}, for_each<nest>{}));
+      for_each<hub>{}, for_each<nest>{}));
     t.push_back(benchmark(
       "sort", 
-      sort<hive>{}, sort<nest>{}));
+      sort<hub>{}, sort<nest>{}));
 
     write_table(t, filename);
   }
