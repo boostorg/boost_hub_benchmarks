@@ -396,34 +396,41 @@ public:
   using reference = element_type&;
   using iterator_category = std::bidirectional_iterator_tag;
 
-  iterator() = default;
+  BOOST_FORCEINLINE iterator() = default;
   BOOST_FORCEINLINE iterator(const iterator& x) noexcept: pbb{x.pbb}, n{x.n} {}
 
   template<
     typename Value2Pointer,
     typename = enable_if_consts_to_element_type_t<Value2Pointer>
   >
-  iterator(const iterator<Value2Pointer>& x) noexcept: pbb{x.pbb}, n{x.n} {}
+  BOOST_FORCEINLINE iterator(const iterator<Value2Pointer>& x) noexcept: 
+    pbb{x.pbb}, n{x.n} {}
       
-  iterator& operator=(const iterator& x) = default;
-
-  template<
-    typename Value2Pointer,
-    typename = enable_if_consts_to_element_type_t<Value2Pointer>
-  >
-  iterator& operator=(const iterator<Value2Pointer>& x) noexcept
+  BOOST_FORCEINLINE iterator& operator=(const iterator& x) noexcept
   {
     pbb = x.pbb;
     n = x.n;
     return *this;
   }
 
-  pointer operator->() const noexcept
+  template<
+    typename Value2Pointer,
+    typename = enable_if_consts_to_element_type_t<Value2Pointer>
+  >
+  BOOST_FORCEINLINE iterator& operator=(
+    const iterator<Value2Pointer>& x) noexcept
+  {
+    pbb = x.pbb;
+    n = x.n;
+    return *this;
+  }
+
+  BOOST_FORCEINLINE pointer operator->() const noexcept
   {
     return static_cast<block&>(*pbb).data() + n;
   }
 
-  reference operator*() const noexcept
+  BOOST_FORCEINLINE reference operator*() const noexcept
   {
     return *operator->();
   }
@@ -466,12 +473,14 @@ public:
     return tmp;
   }
 
-  friend bool operator==(const iterator& x, const iterator& y) noexcept
+  BOOST_FORCEINLINE friend bool operator==(
+    const iterator& x, const iterator& y) noexcept
   {
     return x.pbb == y.pbb && x.n == y.n;
   }
   
-  friend bool operator!=(const iterator& x, const iterator& y) noexcept
+  BOOST_FORCEINLINE friend bool operator!=(
+    const iterator& x, const iterator& y) noexcept
   {
     return !(x == y);
   }
