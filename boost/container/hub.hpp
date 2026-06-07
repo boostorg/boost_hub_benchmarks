@@ -1,4 +1,3 @@
-#error Correct version of hub.hpp picked up
 /* Hub container.
  * 
  * Copyright 2025-2026 Joaquin M Lopez Munoz.
@@ -398,7 +397,7 @@ public:
   using iterator_category = std::bidirectional_iterator_tag;
 
   iterator() = default;
-  iterator(const iterator&) = default;
+  BOOST_FORCEINLINE iterator(const iterator& x) noexcept: pbb{x.pbb}, n{x.n} {}
 
   template<
     typename Value2Pointer,
@@ -1366,14 +1365,9 @@ public:
     auto pbb = blist.next_available; /* for construct_or_restore_capacity */
     int  n;
     auto pb = retrieve_available_block(n);
-    /* Load mask before constructing element, in case
-       construct_or_restore_capacity is not inlined */
-    const mask_type m = pb->mask;
     construct_or_restore_capacity(
       boost::to_address(pb->data() + n), pbb, std::forward<Args>(args)...);
-    const mask_type new_mask = m | (m + 1u);
-    pb->mask = new_mask;
-    const mask_type mask_plus_one = new_mask + 1u;
+    auto mask_plus_one = (pb->mask |= pb->mask + 1) + 1;
     if(BOOST_UNLIKELY(mask_plus_one <= 2)) {
       /* pb->mask == 0 (impossible), 1 or full */
       if(mask_plus_one == 0) blist.unlink_available(pb);
