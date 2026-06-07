@@ -124,7 +124,7 @@ jobs:
           fi        
           for ELEMENT_SIZE in 16 32 64 80; do
             ${{matrix.compiler}} $GITHUB_WORKSPACE/${{matrix.sourcefile}} ${{matrix.architecture}} ${{matrix.compileroptions}} -o ${{matrix.outputfile}} \
-              -I/. -I$GITHUB_WORKSPACE/hive-root -I$GITHUB_WORKSPACE/boost-root \
+              -I$GITHUB_WORKSPACE/. -I$GITHUB_WORKSPACE/hive-root -I$GITHUB_WORKSPACE/boost-root \
               -DELEMENT_SIZE=${ELEMENT_SIZE} -DNONTRIVIAL_ELEMENT
             ${{matrix.command}} "${{matrix.reportdir}}/element_${ELEMENT_SIZE}.txt"
           done
