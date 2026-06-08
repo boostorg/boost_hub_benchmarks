@@ -1363,9 +1363,12 @@ public:
     auto pbb = blist.next_available; /* for construct_or_restore_capacity */
     int  n;
     auto pb = retrieve_available_block(n);
+    auto mask = pb->mask;
     construct_or_restore_capacity(
       boost::to_address(pb->data() + n), pbb, std::forward<Args>(args)...);
-    auto mask_plus_one = (pb->mask |= pb->mask + 1) + 1;
+    mask |= mask + 1;
+    pb->mask = mask;
+    auto mask_plus_one = mask + 1;
     if(BOOST_UNLIKELY(mask_plus_one <= 2)) {
       /* pb->mask == 0 (impossible), 1 or full */
       if(mask_plus_one == 0) blist.unlink_available(pb);
