@@ -1905,15 +1905,21 @@ private:
       allocator_construct(al(), p, std::forward<Args>(args)...);
     }
     BOOST_CATCH(...) {
-      auto pb = static_cast_block_pointer(blist.next_available);
-      if(pb != pbb) { /* block freshly allocated -> restore capacity */
-        blist.unlink_available(pb);
-        delete_block(pb);
-        --num_blocks;
-      }
+      restore_capacity_on_throw(pbb);
       BOOST_RETHROW
     }
     BOOST_CATCH_END
+  }
+
+  BOOST_NOINLINE void restore_capacity_on_throw(
+    block_base_pointer pbb) noexcept
+  {
+    auto pb = static_cast_block_pointer(blist.next_available);
+    if(pb != pbb) { /* block freshly allocated -> restore capacity */
+      blist.unlink_available(pb);
+      delete_block(pb);
+      --num_blocks;
+    }
   }
 
   BOOST_FORCEINLINE void erase_impl(block_base_pointer pbb, int n) noexcept
