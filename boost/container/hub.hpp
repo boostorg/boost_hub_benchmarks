@@ -491,10 +491,6 @@ private:
   template<typename VP, typename F>
   friend std::pair<hub_detail::iterator<VP>, F> container::for_each_while(
     hub_detail::iterator<VP>, hub_detail::iterator<VP>, F);
-  template<typename HubIt, typename F>
-  friend HubIt for_each_while_core(
-    typename HubIt::block_base_pointer,typename HubIt::block_base_pointer,
-    F&&);
 
   template<typename T>
   using pointer_rebind_t = hub_detail::pointer_rebind_t<ValuePointer, T>;
@@ -508,10 +504,10 @@ private:
   static constexpr int N = block_base::N;
   static constexpr mask_type full = block_base::full;
 
-  iterator(const_block_base_pointer pbb_, int n_) noexcept:
+  BOOST_FORCEINLINE iterator(const_block_base_pointer pbb_, int n_) noexcept:
     pbb{const_cast_block_base_pointer(pbb_)}, n{n_} {}
 
-  iterator(const_block_base_pointer pbb_) noexcept:
+  BOOST_FORCEINLINE iterator(const_block_base_pointer pbb_) noexcept:
     pbb{const_cast_block_base_pointer(pbb_)}, 
     n{hub_detail::unchecked_countr_zero(pbb->mask)} 
   {}
@@ -526,38 +522,31 @@ private:
   int                n = 0;
 };
 
-template<typename HubIterator, typename F>
-HubIterator for_each_while_core(
-  typename HubIterator::block_base_pointer pbb,
-  typename HubIterator::block_base_pointer last_pbb, F&& f)
+template<class F>
+struct inline_ref_caller
 {
-  using block = typename HubIterator::block;
+   F& f;
 
-  BOOST_ASSERT(pbb != last_pbb);
-  auto pb = block::static_cast_block_pointer(pbb);
-  auto mask = pb->mask;
-  auto n = unchecked_countr_zero(mask);
-  auto pd = pb->data();
-  do {
-    pbb = pb->next;
-    auto next_mask = pbb->mask;
-    auto next_n = unchecked_countr_zero(next_mask);
-    auto next_pd = block::static_cast_block_pointer(pbb)->data();
-    BOOST_CONTAINER_HUB_PREFETCH(next_pd + next_n);
-    BOOST_CONTAINER_HUB_PREFETCH(pbb->next);
-    for(; ; ) {
-      if(!f(pd[n])) return {pb, n};
-      mask &= mask - 1;
-      if(!mask) break;
-      n = unchecked_countr_zero(mask);
-    }
-    pb = block::static_cast_block_pointer(pbb);
-    mask = next_mask;
-    n = next_n;
-    pd = next_pd;
-  } while(pb != last_pbb);
-  return {last_pbb};
-}
+   template<typename T>
+   BOOST_FORCEINLINE auto operator()(T&& x) -> 
+     decltype(std::declval<F>()(std::declval<T&&>()))
+   { 
+     return f(std::forward<T>(x));
+   }
+};
+
+template<class F>
+struct inline_return_true_ref_caller
+{
+   F& f;
+
+   template<typename T>
+   BOOST_FORCEINLINE bool operator()(T&& x)
+   { 
+     f(std::forward<T>(x));
+     return true;
+   }
+};
 
 template<typename T, std::size_t N>
 struct sort_iterator
@@ -2259,10 +2248,8 @@ F for_each(
   hub_detail::iterator<ValuePtr> first, hub_detail::iterator<ValuePtr> last,
   F f)
 {
-  using reference = typename hub_detail::iterator<ValuePtr>::reference;
-
   container::for_each_while(
-    first, last, [&] (reference x) { f(x); return true; });
+    first, last, hub_detail::inline_return_true_ref_caller<F>{f});
   return f;
 }
 
@@ -2276,14 +2263,16 @@ F for_each(
 template<typename T, typename Allocator, typename F>
 F for_each(hub<T, Allocator>& x, F f)
 {
-  container::for_each(x.begin(), x.end(), std::ref(f));
+  container::for_each_while(
+    x.begin(), x.end(), hub_detail::inline_return_true_ref_caller<F>{f});
   return f;
 }
 
 template<typename T, typename Allocator, typename F>
 F for_each(const hub<T, Allocator>& x, F f)
 {
-  container::for_each(x.begin(), x.end(), std::ref(f));
+  container::for_each_while(
+    x.begin(), x.end(), hub_detail::inline_return_true_ref_caller<F>{f});
   return f;
 }
 
@@ -2304,18 +2293,38 @@ std::pair<hub_detail::iterator<ValuePtr>, F> for_each_while(
   hub_detail::iterator<ValuePtr> first, hub_detail::iterator<ValuePtr> last,
   F f)
 {
-  for(auto pbb = first.pbb; first != last; ) {
-    if(!f(*first)) return {first, std::move(f)};
-    ++first;
-    if(first.pbb != pbb) break;
-  }
-  if(first.pbb != last.pbb) {
-    first = hub_detail::for_each_while_core<hub_detail::iterator<ValuePtr>>(
-      first.pbb, last.pbb, f);
-    if(first.pbb != last.pbb) return {first, std::move(f)};
-  }
-  for(; first != last; ++first) if(!f(*first)) return {first, std::move(f)};
-  return {first, std::move(f)};
+   using iterator = hub_detail::iterator<ValuePtr>;
+   using block = typename iterator::block;
+   using mask_type = typename iterator::mask_type;
+   static constexpr auto full = iterator::full;
+
+   if(BOOST_UNLIKELY(first == last)) return {last, std::move(f)};
+
+   auto pbb = first.pbb,
+        last_pbb = last.pbb;
+   auto last_n = last.n;
+   auto mask = pbb->mask & (full << first.n);
+
+   for(; ;) { 
+      BOOST_CONTAINER_HUB_PREFETCH(&pbb->next->mask);
+      auto is_last = mask_type(pbb == last_pbb);
+      mask &= (is_last << last_n) - mask_type(1);
+      BOOST_CONTAINER_HUB_PREFETCH(
+        block::static_cast_block_pointer(pbb->next)->data());
+      auto next_n = hub_detail::unchecked_countr_zero(pbb->next->mask);
+      BOOST_CONTAINER_HUB_PREFETCH(
+        block::static_cast_block_pointer(pbb->next)->data() + next_n);
+      auto pd = block::static_cast_block_pointer(pbb)->data();
+      BOOST_CONTAINER_UNROLL(4)
+      while(mask) {
+        auto n = hub_detail::unchecked_countr_zero(mask);
+        if (!f(pd[n])) return {{pbb, n}, std::move(f)};
+        mask &= mask - 1;
+      }
+      if(BOOST_UNLIKELY(is_last != 0)) return {last, std::move(f)};
+      pbb = pbb->next;
+      mask = pbb->mask;
+   }
 }
 
 //! <b>Effects</b>: Applies f to the elements of x while f returns true.
@@ -2332,7 +2341,8 @@ std::pair<typename hub<T, Allocator>::iterator, F>
 for_each_while(hub<T, Allocator>& x, F f)
 {
   return {
-    container::for_each_while(x.begin(), x.end(), std::ref(f)).first, 
+    container::for_each_while(
+      x.begin(), x.end(), hub_detail::inline_ref_caller<F>{f}).first,
     std::move(f)};
 }
 
@@ -2341,7 +2351,8 @@ std::pair<typename hub<T, Allocator>::const_iterator, F>
 for_each_while(const hub<T, Allocator>& x, F f)
 {
   return {
-    container::for_each_while(x.begin(), x.end(), std::ref(f)).first,
+    container::for_each_while(
+      x.begin(), x.end(), hub_detail::inline_ref_caller<F>{f}).first,
     std::move(f)};
 }
 
