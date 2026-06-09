@@ -440,6 +440,7 @@ public:
     auto mask = pbb->mask & (full << 1 << n);
     if(BOOST_UNLIKELY(mask == 0)) {
       pbb = pbb->next;
+      BOOST_CONTAINER_HUB_PREFETCH(pbb->next->next);
       BOOST_CONTAINER_HUB_PREFETCH_BLOCK(pbb->next, block);
       mask = pbb->mask;
     }
@@ -459,6 +460,7 @@ public:
     auto mask = pbb->mask & (full >> 1 >> (N - 1 - n));
     if(BOOST_UNLIKELY(mask == 0)) {
       pbb = pbb->prev;
+      BOOST_CONTAINER_HUB_PREFETCH(pbb->prev->prev);
       BOOST_CONTAINER_HUB_PREFETCH_BLOCK(pbb->prev, block);
       mask = pbb->mask;
     }
