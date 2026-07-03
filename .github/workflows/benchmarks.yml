@@ -199,14 +199,14 @@ jobs:
         run: |
           setlocal EnableExtensions EnableDelayedExpansion
           cd %GITHUB_WORKSPACE%
-          for /f "usebackq delims=" %i in (`
+          for /f "usebackq delims=" %%i in (`
             "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" ^
-            -latest ^
-            -products * ^
-            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 ^
-            -find VC\Auxiliary\Build\vcvarsall.bat
+              -latest ^
+              -products * ^
+              -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 ^
+              -find VC\Auxiliary\Build\vcvarsall.bat
           `) do (
-           call "%i" ${{matrix.architecture}}
+            call "%%i" ${{ matrix.architecture }}
           )
           set INCLUDE=%INCLUDE%;%GITHUB_WORKSPACE%\hub-root\include;%GITHUB_WORKSPACE%\hive-root;%GITHUB_WORKSPACE%\boost-root
           echo %INCLUDE%
